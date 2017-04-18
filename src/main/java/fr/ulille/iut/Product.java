@@ -5,17 +5,17 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class Product {
     private int id;
-    private String color;
-    private String text;
-	private int order;
+	private int priority;
 	private int amont;
+    private String color;
+    private String description;
 
-    public Product(int id,int order, int amont, String color, String text) {
+    public Product(int id,int priority, int amont, String color, String description) {
         this.id = id;
-        this.order = order;
+        this.priority = priority;
         this.amont = amont;
         this.color = color;
-        this.text = text;
+        this.description = description;
     }
 
     public Product() {}
@@ -36,20 +36,20 @@ public class Product {
 		this.color = color;
 	}
 
-	public String getText() {
-		return text;
+	public String getDescription() {
+		return description;
 	}
 
-	public void setText(String text) {
-		this.text = text;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
-	public int getOrder() {
-		return order;
+	public int getPriority() {
+		return priority;
 	}
 
-	public void setOrder(int order) {
-		this.order = order;
+	public void setPriority(int priority) {
+		this.priority = priority;
 	}
 
 	public int getAmont() {
@@ -61,10 +61,10 @@ public class Product {
 	}
 
 	public boolean equals(Object u) {
-        return id==((Product) u).id || this.amont == ((Product) u).amont || this.order == ((Product) u).order || color.equals(((Product) u).color) || text.equals(((Product) u).text);
+        return id==((Product) u).id || this.amont == ((Product) u).amont || this.priority == ((Product) u).priority || color.equals(((Product) u).color) || description.equals(((Product) u).description);
     }
 
     public String toString() {
-        return id + " " + order + " " + amont  + " " + color + " " + text;
+        return id + " " + priority + " " + amont  + " " + color + " " + description;
     }
 }

@@ -23,11 +23,11 @@ public class SqlRequest {
 			String sql = "DROP TABLE IF EXISTS Product";
 			stmt.executeUpdate(sql);
 			sql = "CREATE TABLE Product " +
-					"(id INT PRIMARY KEY     NOT NULL," +
-					" priority           TEXT    NOT NULL, " + 
+					"(id INTEGER PRIMARY KEY," +
+					" priority          INT    NOT NULL, " + 
 					" amont            INT     NOT NULL, " + 
 					" color        CHAR(50), " + 
-					" description         REAL)"; 
+					" description         VARCHAR(50))"; 
 			stmt.executeUpdate(sql);
 		} catch ( Exception e ) {
 			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
@@ -37,20 +37,20 @@ public class SqlRequest {
 		System.out.println("Table created successfully");
 		
 	    try {
-	        String sql = "INSERT INTO Product (id,priority,amont,color,description) " +
-	                     "VALUES (1, 1, 32, 'Blue', 'hello' );"; 
+	        String sql = "INSERT INTO Product (priority,amont,color,description) " +
+	                     "VALUES (1, 32, 'Blue', 'hello' );"; 
 	        stmt.executeUpdate(sql);
 
-	        sql = "INSERT INTO Product (id,priority,amont,color,description) " +
-	              "VALUES (2, 2, 14, 'Black', 'Goodbye' );"; 
+	        sql = "INSERT INTO Product (priority,amont,color,description) " +
+	              "VALUES (2, 14, 'Black', 'Goodbye' );"; 
 	        stmt.executeUpdate(sql);
 
-	        sql = "INSERT INTO Product (id,priority,amont,color,description) " +
-	              "VALUES (3, 2, 15, 'Red', 'hi' );"; 
+	        sql = "INSERT INTO Product (priority,amont,color,description) " +
+	              "VALUES (2, 15, 'Red', 'hi' );"; 
 	        stmt.executeUpdate(sql);
 
-	        sql = "INSERT INTO Product (id,priority,amont,color,description) " +
-	              "VALUES (4, 3, 5, 'White', 'Hallo' );"; 
+	        sql = "INSERT INTO Product (priority,amont,color,description) " +
+	              "VALUES (3, 5, 'White', 'Hallo' );"; 
 	        stmt.executeUpdate(sql);
 
 	        stmt.close();

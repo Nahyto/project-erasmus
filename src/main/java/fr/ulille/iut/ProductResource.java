@@ -1,18 +1,20 @@
 package fr.ulille.iut;
 
+
 import javax.ws.rs.*;
+
 
 
 import javax.ws.rs.core.*;
 
 import java.net.URI;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+
 
 /**
  * Ressource Product (accessible avec le chemin "/products")
@@ -26,29 +28,11 @@ public class ProductResource {
 	// les URI de manière générique.
 	@Context
 	public UriInfo uriInfo;
-	Connection c = null;
-	Statement stmt = null;
 
 	/**
 	 * Une ressource doit avoir un contructeur (éventuellement sans arguments)
 	 */
-	public ProductResource() {
-		c = Launch.getInstance();
-		try {
-			stmt = c.createStatement();
-			String sql = "CREATE TABLE Product " +
-					"(id INTEGER PRIMARY KEY," +
-					" priority          INT    NOT NULL, " + 
-					" amont            INT     NOT NULL, " + 
-					" color        CHAR(50), " + 
-					" description         VARCHAR(50))"; 
-			stmt.executeUpdate(sql);
-			c.close();
-		} catch ( Exception e ) {
-			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
-			System.exit(0);
-		}
-	}
+	public ProductResource() {}
 
 	/**
 	 * Méthode de création d'un utilisateur qui prend en charge les requêtes HTTP POST
@@ -60,17 +44,24 @@ public class ProductResource {
 	 */
 	@POST
 	public Response createProduct(Product product) {
-		c = Launch.getInstance();
-		try {
-			stmt = c.createStatement();
-			String sql = "INSERT INTO Product (priority,amont,color,description) " +
-					"VALUES ("+product.getPriority()+", "+product.getAmont()+", "+product.getColor()+", "+product.getDescription()+" );"; 
-			stmt.executeUpdate(sql);
-			stmt.close();
-			c.close();
+		Connection c = Launch.getInstance();
+		try { 
+			PreparedStatement pstmt = c.prepareStatement("INSERT INTO Product (priority, amont, color, description) VALUES (?, ?, ?, ?);");
+			pstmt.setInt(1, product.getPriority());
+			pstmt.setInt(2, product.getAmont());
+			pstmt.setString(3, product.getColor());
+			pstmt.setString(4, product.getDescription());
+			pstmt.executeUpdate();
+			pstmt.close();
 		} catch ( Exception e ) {
-			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
-			System.exit(0);
+			System.err.println( e.getClass().getName() + ": " + e.getMessage());
+		}finally {
+			try {
+				if (c != null)
+					c.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
 		// On renvoie 201 et l'instance de la ressource dans le Header HTTP 'Location'
 		URI instanceURI = uriInfo.getAbsolutePathBuilder().path(Integer.toString(product.getId())).build();
@@ -85,8 +76,9 @@ public class ProductResource {
 	@GET
 	public List<Product> getProducts() {
 		List<Product> products = new ArrayList<Product>();
-		c = Launch.getInstance();
+		Connection c = Launch.getInstance();
 		try {
+			Statement stmt = c.createStatement();
 			ResultSet rs = stmt.executeQuery( "SELECT * FROM Product;" );
 			while ( rs.next() ) {
 				int id = rs.getInt("id");
@@ -101,7 +93,13 @@ public class ProductResource {
 			c.close();
 		} catch ( Exception e ) {
 			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
-			System.exit(0);
+		}finally {
+			try {
+				if (c != null)
+					c.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
 		return products;
 	}
@@ -116,45 +114,64 @@ public class ProductResource {
 	@Produces({"application/json", "application/xml"})
 	public Product getProduct(@PathParam("id") int id) {
 		Product p = null;
-		boolean in = false;
-		c = Launch.getInstance();
+		//boolean in = false;
+		Connection c = Launch.getInstance();
 		try {
-			ResultSet rs = stmt.executeQuery( "SELECT * FROM Product where id=;"+id );
-			while ( rs.next() ) {
-				in = true;
-				int  priority = rs.getInt("priority");
-				int amont  = rs.getInt("amont");
-				String  color = rs.getString("color");
-				String description = rs.getString("description");
-				p = new Product(id,priority,amont,color,description);
+			PreparedStatement stmt = c.prepareStatement("SELECT * FROM Product WHERE id = ?" );
+			stmt.setInt(1, id);
+			ResultSet rs = stmt.executeQuery( );
+			if (!rs.isBeforeFirst())
+				return null;
+			else {
+				while ( rs.next() ) {
+					int  priority = rs.getInt("priority");
+					int amont  = rs.getInt("amont");
+					String  color = rs.getString("color");
+					String description = rs.getString("description");
+					p = new Product(id,priority,amont,color,description);
+				}
+				rs.close();
+				stmt.close();
 			}
-			rs.close();
-			stmt.close();
-			c.close();
 		} catch ( Exception e ) {
 			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
-			System.exit(0);
+		}finally {
+			try {
+				if (c != null)
+					c.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
-		// Si l'utilisateur est inconnu, on renvoie 404
-		if (!in) {
-			throw new NotFoundException();
-		}
-		else {
-			return p;
-		}
+		return p;
 	}
 
-	/*@DELETE
+	@DELETE
 	@Path("{id}")
-	public Response deleteProduct(@PathParam("id") String id) {
+	public Response deleteProduct(@PathParam("id") int id) {
 		// Si l'utilisateur est inconnu, on renvoie 404
-		if (  ! products.containsKey(id) ) {
-			throw new NotFoundException();
+		Product p = getProduct(id);
+		if (p == null)
+			return null;
+
+		Connection c = Launch.getInstance();
+
+		try {
+			PreparedStatement stmt = c.prepareStatement("DELETE FROM Product WHERE id = ?");
+			stmt.setInt(1, id);
+			stmt.executeUpdate();
+			stmt.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally {
+			try {
+				if (c != null)
+					c.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
-		else {
-			products.remove(id);
-			return Response.status(Response.Status.NO_CONTENT).build();
-		}
+		return Response.ok().build();
 	}
 
 	/** 
@@ -163,18 +180,36 @@ public class ProductResource {
 	 * @param id le id de l'utilisateur à modifier
 	 * @param product l'entité correspondant à la nouvelle instance
 	 * @return Un code de retour HTTP dans un objet Response
-	 
+	 **/
 	@PUT
 	@Path("{id}")
-	public Response modifyProduct(@PathParam("id") String id, Product product) {
+	public Response modifyProduct(@PathParam("id") int id, Product product) {
 		// Si l'utilisateur est inconnu, on renvoie 404
-		if (  !products.containsKey(Integer.toString(product.getId())) ) {
-			throw new NotFoundException();
+		Product p = getProduct(id);
+		if (p == null)
+			return null;
+		
+		Connection c = Launch.getInstance();
+		try {
+			PreparedStatement stmt = c.prepareStatement("UPDATE Product SET priority = ?, amont = ?, color = ?, description = ? WHERE id = ?");
+			stmt.setInt(1, product.getPriority() == 0 ? p.getPriority(): product.getPriority());
+			stmt.setInt(2, product.getAmont() == 0 ? p.getAmont(): product.getAmont());
+			stmt.setString(3, product.getColor() == null? p.getColor() : product.getColor());
+			stmt.setString(4, product.getDescription() == null ? p.getDescription() : product.getDescription());
+			stmt.setInt(5, id);
+			stmt.executeUpdate();
+			stmt.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally {
+			try {
+				if (c != null)
+					c.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
-		else {
-			products.put(Integer.toString(product.getId()), product);
-			return Response.status(Response.Status.NO_CONTENT).build();
-		}
+		return Response.ok().build();
 	}
 
 	/**
@@ -186,20 +221,14 @@ public class ProductResource {
 	 * @param text le text de l'utilisateur
 	 * @return Response le corps de la réponse est vide, le code de retour HTTP est fixé à 201 si la création est faite
 	 *         L'en-tête contient un champs Location avec l'URI de la nouvelle ressource
-	 
+	 **/
 	@POST
 	@Consumes("application/x-www-form-urlencoded")
-	public Response createProduct(@FormParam("id") int id, @FormParam("color") String color,@FormParam("order") int order,@FormParam("amont") int amont, @FormParam("test") String text) {
-		// Si l'utilisateur existe déjà, renvoyer 409
-		if ( products.containsKey(id) ) {
-			return Response.status(Response.Status.CONFLICT).build();
-		}
-		else {
-			products.put(Integer.toString(id), new Product(id,order,amont,color,text));
-
-			// On renvoie 201 et l'instance de la ressource dans le Header HTTP 'Location'
-			URI instanceURI = uriInfo.getAbsolutePathBuilder().path(Integer.toString(id)).build();
-			return Response.created(instanceURI).build();
-		}
-	}*/
+	public Response createProduct(@FormParam("id") int id, @FormParam("color") String color,@FormParam("priority") int priority,@FormParam("amont") int amont, @FormParam("description") String description) {
+		return createProduct(new Product(id, priority, amont, color, description));
+	}
+	
+    public int getColumnCount() {
+        return new Product().getColumnCount();
+    }
 }

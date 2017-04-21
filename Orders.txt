@@ -1,0 +1,6 @@
+(Object 2): 14Goodbye, color : Black. Priority : 2
+(Object 3): 15Table with coucou on it, color : White. Priority : 2
+(Object 4): 5Car with I love puppies on it, color : Brown. Priority : 1
+(Object 5): 100Computer with The Cake Is A Lie on it, color : White. Priority : 5
+(Object 6): 100Computer with The Cake Is A Lie on it, color : White. Priority : 5
+

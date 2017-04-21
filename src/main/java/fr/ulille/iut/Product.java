@@ -17,6 +17,10 @@ public class Product {
         this.color = color;
         this.description = description;
     }
+    
+    public int getColumnCount() {
+        return getClass().getDeclaredFields().length;
+    }
 
     public Product() {}
 
@@ -65,6 +69,16 @@ public class Product {
     }
 
     public String toString() {
-        return id + " " + priority + " " + amont  + " " + color + " " + description;
+        return "(Object " + id + "): " + amont + description + ", color : " + color + ". Priority : " + priority;
+    }
+    
+    public String[] toArray(){
+    	String[] result = new String[getColumnCount()];
+    	result[0] = ""+getId();
+    	result[1] = ""+getPriority();
+    	result[2] = ""+getAmont();
+    	result[3] = getColor();
+    	result[4] = getDescription();
+    	return result;
     }
 }
